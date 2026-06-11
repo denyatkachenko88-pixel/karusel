@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KARUSEL — карусели которые останавливают листание</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0d0a;--bg2:#161410;--bg3:#1d1a15;--bg4:#222018;
+  --gold:#c8a96e;--gold-light:#e8c98e;--gold-dim:rgba(200,169,110,.15);
+  --cream:#f0e8d8;--cm:rgba(240,232,216,.55);--cd:rgba(240,232,216,.22);
+  --border:rgba(200,169,110,.15);--border2:rgba(200,169,110,.3);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--cream);font-family:'Inter',sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 60px;display:flex;align-items:center;justify-content:space-between;transition:all .4s}
+nav.scrolled{background:rgba(15,13,10,.95);border-bottom:0.5px solid var(--border);backdrop-filter:blur(16px)}
+.logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--cream);letter-spacing:.08em;text-decoration:none}
+.logo em{color:var(--gold);font-style:italic}
+.nav-r{display:flex;align-items:center;gap:32px}
+.nav-r a{font-size:13px;color:var(--cm);text-decoration:none;font-weight:500;transition:color .2s}
+.nav-r a:hover{color:var(--cream)}
+.nav-cta{background:var(--gold)!important;color:#0f0d0a!important;padding:9px 20px;border-radius:4px;font-weight:600!important;letter-spacing:.04em}
+.nav-cta:hover{background:var(--gold-light)!important}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 60px 80px;position:relative;overflow:hidden}
+.hero-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 65% 45%,rgba(200,169,110,.07) 0%,transparent 65%);pointer-events:none}
+.hero-line{position:absolute;top:0;left:60px;right:60px;height:0.5px;background:var(--border)}
+.tag{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:24px;display:flex;align-items:center;gap:12px}
+.tag::before{content:'';width:28px;height:0.5px;background:var(--gold)}
+h1{font-family:'Playfair Display',serif;font-size:clamp(54px,7.8vw,112px);font-weight:900;line-height:.92;letter-spacing:-.025em;color:var(--cream);max-width:860px;margin-bottom:44px}
+h1 em{color:var(--gold);font-style:italic}
+.hero-bot{display:flex;align-items:flex-end;justify-content:space-between;gap:40px}
+.hero-desc{max-width:400px;font-size:16px;line-height:1.72;color:var(--cm);font-weight:300}
+.hero-act{display:flex;flex-direction:column;align-items:flex-end;gap:14px;flex-shrink:0}
+.btn-gold{background:var(--gold);color:#0f0d0a;padding:16px 36px;border-radius:4px;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:.06em;text-transform:uppercase;transition:all .25s;display:inline-block;border:none;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-gold:hover{background:var(--gold-light);transform:translateY(-2px)}
+.hero-note{font-size:12px;color:var(--cd);letter-spacing:.05em}
+@keyframes sd{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(6px);opacity:1}}
+.hero-scroll{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--cd);font-size:10px;letter-spacing:.15em;text-transform:uppercase}
+.hero-scroll::after{content:'';width:0.5px;height:36px;background:var(--gold);opacity:.3;animation:sd 2s ease infinite}
+
+/* MARQUEE */
+.mq{border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);padding:16px 0;overflow:hidden;background:var(--bg2)}
+.mq-in{display:flex;white-space:nowrap;animation:mq 24s linear infinite}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.mq-item{font-family:'Playfair Display',serif;font-size:12px;font-weight:700;color:var(--cd);letter-spacing:.14em;text-transform:uppercase;padding:0 28px;display:inline-flex;align-items:center;gap:28px}
+.mq-dot{width:3px;height:3px;border-radius:50%;background:var(--gold);opacity:.5;flex-shrink:0}
+
+/* SECTIONS */
+section{padding:100px 60px}
+h2{font-family:'Playfair Display',serif;font-size:clamp(34px,4.5vw,60px);font-weight:900;line-height:1.06;letter-spacing:-.02em;color:var(--cream);margin-bottom:16px}
+h2 em{color:var(--gold);font-style:italic}
+.sub{font-size:15px;color:var(--cm);font-weight:300;line-height:1.65;max-width:480px;margin-bottom:52px}
+
+/*/* SHOWCASE */
+.showcase{background:var(--bg);padding-top:80px}
+.slides-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.ls{aspect-ratio:1;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;transition:transform .35s cubic-bezier(.22,.68,0,1.2),box-shadow .35s}
+.ls:hover{transform:translateY(-10px) scale(1.04);box-shadow:0 28px 70px rgba(0,0,0,.75)}
+.ls img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;transition:transform .7s cubic-bezier(.22,.68,0,1.2)}
+.ls:hover img{transform:scale(1.12)}
+.ls-ov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:16px 14px}
+.ls-top{display:flex;align-items:center;justify-content:space-between}
+.ls-num{font-size:11px;font-weight:800;letter-spacing:.25em;color:rgba(255,255,255,.45);font-family:'Inter',sans-serif}
+.ls-tag{font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.ls-bot{display:flex;flex-direction:column}
+.ls-bar{width:28px;height:2.5px;background:var(--gold);margin-bottom:12px;opacity:1;border-radius:2px}
+.ls-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:900;line-height:1.18;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,1),0 4px 40px rgba(0,0,0,.8);margin-bottom:8px;letter-spacing:-.01em}
+.ls-text{font-size:9.5px;color:rgba(255,255,255,.65);line-height:1.6;text-shadow:0 1px 10px rgba(0,0,0,1);font-weight:400}
+.gd{background:linear-gradient(to top,rgba(0,0,0,.96) 0%,rgba(0,0,0,.5) 35%,rgba(0,0,0,.05) 70%,transparent 100%)}
+.gd2{background:linear-gradient(175deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.2) 40%,transparent 65%,rgba(0,0,0,.6) 100%)}
+.gd3{background:linear-gradient(to top,rgba(120,70,0,.98) 0%,rgba(80,40,0,.6) 40%,rgba(0,0,0,.1) 75%,transparent 100%)}
+
+/* HOW */
+.how{background:var(--bg2)}
+.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;margin-top:56px}
+.steps{display:flex;flex-direction:column}
+.step{padding:26px 0;border-bottom:0.5px solid var(--border);display:flex;gap:22px}
+.step:first-child{border-top:0.5px solid var(--border)}
+.sn{font-family:'Playfair Display',serif;font-size:12px;color:var(--gold);font-weight:700;opacity:.65;flex-shrink:0;margin-top:2px;letter-spacing:.08em}
+.st{font-size:15px;font-weight:600;color:var(--cream);margin-bottom:5px}
+.sd{font-size:13px;color:var(--cm);line-height:1.65;font-weight:300}
+.how-stats{display:flex;flex-direction:column;gap:12px}
+.hstat{background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:26px 30px}
+.hstat-n{font-family:'Playfair Display',serif;font-size:52px;font-weight:900;color:var(--gold);line-height:1}
+.hstat-l{font-size:13px;color:var(--cm);margin-top:4px;font-weight:300}
+
+/* GENERATOR */
+.generator{background:var(--bg);padding:100px 60px}
+.gen-wrap{background:var(--bg2);border:0.5px solid var(--border2);border-radius:20px;overflow:hidden;margin-top:52px}
+.gen-tabs{display:flex;border-bottom:0.5px solid var(--border)}
+.gen-tab{flex:1;padding:18px 24px;font-size:13px;font-weight:600;color:var(--cm);cursor:pointer;border:none;background:transparent;font-family:'Inter',sans-serif;letter-spacing:.03em;transition:all .2s;border-bottom:2px solid transparent;margin-bottom:-0.5px}
+.gen-tab.on{color:var(--gold);border-bottom-color:var(--gold);background:rgba(200,169,110,.04)}
+.gen-tab:hover:not(.on){color:var(--cream)}
+.gen-body{padding:36px}
+.gen-panel{display:none}
+.gen-panel.on{display:block}
+.gen-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.gfield{display:flex;flex-direction:column;gap:6px}
+.gfield label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#666;font-weight:700}
+.gfield input,.gfield select,.gfield textarea{background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:all .2s;font-weight:400;width:100%}
+.gfield input:focus,.gfield select:focus,.gfield textarea:focus{border-color:var(--gold);background:var(--bg4);box-shadow:0 0 0 3px rgba(200,169,110,.08)}
+.gfield select option{background:var(--bg3)}
+.gfield textarea{resize:none;height:100px}
+.gfield.full{grid-column:1/-1}
+.niche-extra{display:none;margin-top:8px}
+.niche-extra input{width:100%;background:var(--bg3);border:0.5px solid var(--gold);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none}
+.gen-btn-wrap{margin-top:8px}
+.gen-go{width:100%;padding:15px;background:var(--gold);color:#0f0d0a;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;font-family:'Inter',sans-serif}
+.gen-go:hover{background:var(--gold-light)}
+.gen-go:active{transform:scale(.98)}
+.gen-go:disabled{opacity:.3;cursor:not-allowed}
+@keyframes rot{to{transform:rotate(360deg)}}
+.spin{animation:rot .6s linear infinite;display:inline-block}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,169,110,.4)}50%{box-shadow:0 0 0 10px rgba(200,169,110,0)}}
+.gen-go.loading{animation:pulse .9s infinite}
+
+/* RESULTS */
+.results{margin-top:32px;display:none}
+.results-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.results-label{font-size:13px;font-weight:600;color:var(--cream)}
+.results-acts{display:flex;gap:8px}
+.ract{display:flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--border);border-radius:8px;background:transparent;color:var(--cm);font-size:11px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;font-weight:600}
+.ract:hover{border-color:var(--gold);color:var(--gold)}
+.rgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+@keyframes pop{from{opacity:0;transform:scale(.82) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.rslide{aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;justify-content:space-between;padding:12px;position:relative;overflow:hidden;cursor:pointer;transition:transform .25s,box-shadow .25s;animation:pop .35s ease both}
+.rslide:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 44px rgba(0,0,0,.5)}
+.rs-num{font-size:9px;font-weight:800;opacity:.5;letter-spacing:.12em}
+.rs-bot{}
+.rs-title{font-family:'Playfair Display',serif;font-size:12px;font-weight:900;line-height:1.2;margin-bottom:5px}
+.rs-bar{width:16px;height:2px;margin-bottom:6px;opacity:.8}
+.rs-text{font-size:7.5px;opacity:.7;line-height:1.5}
+
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.modal-ov.on{display:flex}
+.modal{background:var(--bg2);border-radius:20px;width:380px;overflow:hidden;border:0.5px solid var(--border2)}
+.mprev{min-height:180px;padding:28px;display:flex;flex-direction:column;justify-content:flex-end}
+.mprev-num{font-size:10px;font-weight:700;opacity:.4;margin-bottom:8px;letter-spacing:.12em}
+.mprev-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;line-height:1.15;margin-bottom:10px}
+.mprev-bar{width:32px;height:2px;margin-bottom:10px;opacity:.6}
+.mprev-text{font-size:13px;line-height:1.65;opacity:.8;font-weight:300}
+.mbody{padding:20px 24px 24px;border-top:0.5px solid var(--border)}
+.mbody label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#666;font-weight:700;display:block;margin-bottom:6px}
+.mbody textarea{width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;resize:none;height:80px;transition:border-color .15s}
+.mbody textarea:focus{border-color:var(--gold)}
+.macts{display:flex;gap:8px;margin-top:10px}
+.msave{flex:1;padding:11px;background:var(--gold);color:#0f0d0a;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif}
+.mclose{width:44px;padding:11px;background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;cursor:pointer;color:var(--cm);font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mclose:hover{background:var(--bg4);color:var(--cream)}
+
+/* FOR WHO */
+.forwhom{background:var(--bg2)}
+.fw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-top:52px}
+.fwc{background:var(--bg2);padding:32px 26px;transition:background .2s}
+.fwc:hover{background:var(--bg3)}
+.fwc-line{width:20px;height:1.5px;background:var(--gold);margin-bottom:18px;opacity:.6}
+.fwc-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--cream);margin-bottom:8px}
+.fwc-desc{font-size:13px;color:var(--cm);line-height:1.65;font-weight:300}
+
+/* PRICING */
+.pricing{background:var(--bg);text-align:center}
+.pricing .tag{justify-content:center}
+.pricing .tag::before{display:none}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:860px;margin:52px auto 0}
+.plan{background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:32px 28px;text-align:left;transition:border-color .2s}
+.plan:hover{border-color:var(--border2)}
+.plan.featured{border-color:var(--gold);background:var(--bg3);position:relative}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#0f0d0a;font-size:10px;font-weight:800;padding:4px 14px;border-radius:20px;letter-spacing:.08em;white-space:nowrap}
+.plan-name{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:16px}
+.plan-price{font-family:'Playfair Display',serif;font-size:48px;font-weight:900;color:var(--cream);line-height:1}
+.plan-curr{font-size:18px;color:var(--gold);vertical-align:top;margin-top:10px;display:inline-block}
+.plan-period{font-size:12px;color:var(--cm);margin-top:4px;font-weight:300}
+.plan-free{display:inline-block;margin-top:8px;background:var(--gold-dim);border:0.5px solid var(--border2);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--gold);font-weight:600}
+.plan-divider{height:0.5px;background:var(--border);margin:20px 0}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:24px}
+.plan-features li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--cm);font-weight:300}
+.plan-features li::before{content:'';width:14px;height:0.5px;background:var(--gold);flex-shrink:0}
+.plan-btn{display:block;width:100%;padding:13px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;text-decoration:none;letter-spacing:.05em;text-transform:uppercase;transition:all .2s;cursor:pointer;border:none;font-family:'Inter',sans-serif}
+.plan-btn-outline{background:transparent;border:0.5px solid var(--border2);color:var(--gold)}
+.plan-btn-outline:hover{background:var(--gold-dim)}
+.plan-btn-gold{background:var(--gold);color:#0f0d0a}
+.plan-btn-gold:hover{background:var(--gold-light)}
+.price-context{font-size:12px;color:rgba(200,169,110,.4);margin-top:20px;letter-spacing:.03em;line-height:1.7}
+
+footer{padding:52px 60px;border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.foot-logo{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--cream)}
+.foot-logo em{color:var(--gold);font-style:italic}
+.foot-copy{font-size:12px;color:var(--cd);letter-spacing:.06em}
+
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.slide-card{border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .25s,box-shadow .25s;animation:popIn .35s ease both}
+.slide-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.slide-inner{aspect-ratio:1;position:relative;overflow:hidden}
+.slide-edit-bar{background:var(--bg2);border:0.5px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between}
+.slide-edit-btn{background:none;border:none;color:var(--cm);font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;padding:4px 8px;border-radius:6px;transition:all .15s}
+.slide-edit-btn:hover{background:var(--bg3);color:var(--gold)}
+@media(max-width:600px){
+  .sgrid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg3);border:0.5px solid var(--border2);color:var(--gold);padding:10px 22px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:300;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width: 768px) {
+  nav{padding:14px 20px}
+  .nav-r a:not(.nav-cta){display:none}
+  .nav-cta{padding:8px 16px;font-size:12px}
+
+  .hero{padding:0 20px 60px;min-height:100vh}
+  .hero-line{left:20px;right:20px}
+  h1{font-size:clamp(42px,12vw,72px);margin-bottom:32px}
+  .hero-bot{flex-direction:column;align-items:flex-start;gap:24px}
+  .hero-desc{max-width:100%;font-size:15px}
+  .hero-act{align-items:flex-start;width:100%}
+  .btn-gold{width:100%;text-align:center;padding:16px}
+  .hero-scroll{display:none}
+
+  section{padding:60px 20px}
+  h2{font-size:clamp(28px,8vw,48px)}
+  .sub{font-size:14px;margin-bottom:32px}
+
+  .showcase{padding:60px 20px}
+  .slides-row{grid-template-columns:1fr 1fr;gap:10px}
+  .ls{aspect-ratio:1}
+  .ls-title{font-size:12px}
+  .ls-text{font-size:8px}
+
+  .how-grid{grid-template-columns:1fr;gap:40px}
+  .how-stats{flex-direction:column}
+
+  .fw-grid{grid-template-columns:1fr 1fr}
+
+  .feat-grid{grid-template-columns:1fr}
+
+  .plans{grid-template-columns:1fr;max-width:100%}
+  .plan.featured{margin-top:20px}
+
+  .generator{padding:60px 20px}
+  .gen-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .gen-tab{white-space:nowrap;font-size:12px;padding:14px 16px}
+  .gen-body{padding:20px}
+  .gen-row{grid-template-columns:1fr}
+  .gfield.full{grid-column:1}
+
+  footer{padding:32px 20px;flex-direction:column;gap:12px;text-align:center}
+
+  .mq-item{font-size:10px;padding:0 16px;gap:16px}
+}
+
+@media (max-width: 400px) {
+  h1{font-size:38px}
+  .slides-row{grid-template-columns:1fr 1fr;gap:8px}
+  .ls-title{font-size:11px}
+}
+
+@media (max-width: 768px) {
+  div[style*="padding:20px 60px"][style*="justify-content:center"] {
+    padding: 20px !important;
+    gap: 28px !important;
+  }
+  section[style*="padding:80px 60px"] {
+    padding: 48px 24px !important;
+  }
+  section[style*="padding:60px"][style*="border-top"] {
+    padding: 40px 24px !important;
+  }
+  section[style*="padding:60px"] > div[style*="flex-wrap:wrap"] {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+  section[style*="padding:60px"] > div > div[style*="text-align:left"] {
+    text-align: center !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <a href="#" class="logo">KARU<em>SEL</em></a>
+  <div class="nav-r">
+    <a href="#showcase">Примеры</a>
+    <a href="#generator">Генератор</a>
+    <a href="#pricing">Цены</a>
+    <a href="#pricing" class="nav-cta">Попробовать</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-line"></div>
+  <div class="tag">Генератор каруселей для Instagram</div>
+  <h1>Пока другие<br>пролистывают ленту —<br>твоя карусель<br><em>останавливает.</em></h1>
+  <div class="hero-bot">
+    <p class="hero-desc">Каждый день без карусели — потерянные подписчики. Введи тему и получи 10 готовых слайдов за 40 секунд. Без дизайнера, без Canva, без лишних движений.</p>
+    <div class="hero-act">
+      <a href="#generator" class="btn-gold">Создать бесплатно</a>
+      <span class="hero-note" style="font-size:13px;color:rgba(200,169,110,.7);font-weight:600">⚡ Первые 3 карусели бесплатно · без карты · без регистрации</span>
+    </div>
+  </div>
+  <div class="hero-scroll">Листай</div>
+</section>
+
+<!-- MARQUEE -->
+<div class="mq">
+  <div class="mq-in">
+    <span class="mq-item">Психологи<span class="mq-dot"></span>Коучи<span class="mq-dot"></span>Эксперты<span class="mq-dot"></span>Блогеры<span class="mq-dot"></span>Онлайн-школы<span class="mq-dot"></span>Продюсеры<span class="mq-dot"></span>Маркетологи<span class="mq-dot"></span>Нутрициологи<span class="mq-dot"></span></span>
+    <span class="mq-item">Психологи<span class="mq-dot"></span>Коучи<span class="mq-dot"></span>Эксперты<span class="mq-dot"></span>Блогеры<span class="mq-dot"></span>Онлайн-школы<span class="mq-dot"></span>Продюсеры<span class="mq-dot"></span>Маркетологи<span class="mq-dot"></span>Нутрициологи<span class="mq-dot"></span></span>
+  </div>
+</div>
+
+<!-- SOCIAL PROOF BAR -->
+<div style="background:#161410;border-bottom:0.5px solid rgba(200,169,110,.15);padding:20px 60px;display:flex;align-items:center;justify-content:center;gap:60px;flex-wrap:wrap">
+  <div style="text-align:center">
+    <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:#c8a96e;line-height:1" id="counter">2 847</div>
+    <div style="font-size:11px;color:rgba(240,232,216,.4);margin-top:4px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">каруселей создано</div>
+  </div>
+  <div style="text-align:center">
+    <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:#c8a96e;line-height:1">40 сек</div>
+    <div style="font-size:11px;color:rgba(240,232,216,.4);margin-top:4px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">среднее время генерации</div>
+  </div>
+  <div style="text-align:center">
+    <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:#c8a96e;line-height:1">3</div>
+    <div style="font-size:11px;color:rgba(240,232,216,.4);margin-top:4px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">бесплатно сразу</div>
+  </div>
+  <div style="text-align:center">
+    <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:#c8a96e;line-height:1">∞</div>
+    <div style="font-size:11px;color:rgba(240,232,216,.4);margin-top:4px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">на Pro плане</div>
+  </div>
+</div>
+
+<!-- SHOWCASE -->
+<section class="showcase" id="showcase">
+  <div class="tag reveal">Пример карусели</div>
+  <h2 class="reveal">Вот что получаешь<br>за <em>40 секунд.</em></h2>
+  <p class="sub reveal">Каждый слайд — отдельный постер с живым фото. Система строит визуальный ритм сама.</p>
+  <div class="slides-row reveal" id="demoRow"></div>
+</section>
+
+<!-- HOW -->
+<section class="how" id="how">
+  <div class="tag reveal">Как это работает</div>
+  <h2 class="reveal">Три шага<br>до готового <em>контента.</em></h2>
+  <div class="how-grid">
+    <div class="steps reveal">
+      <div class="step"><span class="sn">01</span><div><div class="st">Введи тему или текст</div><div class="sd">Одно слово, идея или готовая статья — система разберётся и создаст структуру сама.</div></div></div>
+      <div class="step"><span class="sn">02</span><div><div class="st">Выбери нишу</div><div class="sd">Психология, бизнес, фитнес — или напиши свою. Контент подстроится под аудиторию.</div></div></div>
+      <div class="step"><span class="sn">03</span><div><div class="st">Получи 10 слайдов</div><div class="sd">Крючок, ценный контент, призыв к действию. Отредактируй если нужно — и публикуй.</div></div></div>
+    </div>
+    <div class="how-stats reveal">
+      <div class="hstat"><div class="hstat-n">40</div><div class="hstat-l">секунд от темы до готовой карусели</div></div>
+      <div class="hstat"><div class="hstat-n">∞</div><div class="hstat-l">безлимитных каруселей на Pro плане</div></div>
+      <div class="hstat"><div class="hstat-n">3</div><div class="hstat-l">режима — по теме, по тексту, вручную</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- GENERATOR -->
+<section class="generator" id="generator">
+  <div class="tag reveal">Попробуй сам</div>
+  <h2 class="reveal">Генератор<br><em>карусели.</em></h2>
+  <p class="sub reveal">Три способа создать контент — выбери который удобнее.</p>
+
+  <div class="gen-wrap reveal">
+    <div class="gen-tabs">
+      <button class="gen-tab on" onclick="switchTab('topic',this)">По теме / заголовку</button>
+      <button class="gen-tab" onclick="switchTab('text',this)">По моему тексту</button>
+      <button class="gen-tab" onclick="switchTab('manual',this)">Вручную с нуля</button>
+    </div>
+
+    <!-- TAB 1: по теме -->
+    <div class="gen-body">
+      <div class="gen-panel on" id="tab-topic">
+        <div class="gen-row">
+          <div class="gfield">
+            <label>Тема поста</label>
+            <input id="t-topic" type="text" placeholder="Как справляться с тревогой" />
+          </div>
+          <div class="gfield">
+            <label>Ниша</label>
+            <select id="t-niche" onchange="handleNiche('t-niche','t-custom')">
+              <option value="Психология">Психология</option>
+              <option value="Бизнес и финансы">Бизнес и финансы</option>
+              <option value="Здоровье и фитнес">Здоровье и фитнес</option>
+              <option value="Образование">Образование</option>
+              <option value="Маркетинг">Маркетинг</option>
+              <option value="Личный бренд">Личный бренд</option>
+              <option value="Отношения">Отношения</option>
+              <option value="Саморазвитие">Саморазвитие</option>
+              <option value="custom">+ Своя ниша...</option>
+            </select>
+            <div class="niche-extra" id="t-custom">
+              <input type="text" placeholder="Введи свою нишу" id="t-custom-val" />
+            </div>
+          </div>
+          <div class="gfield full">
+            <label>Контекст <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(необязательно)</span></label>
+            <input id="t-ctx" type="text" placeholder="Для кого пост и что хочешь донести" />
+          </div>
+        </div>
+        <div id="genProgress" style="display:none;margin-bottom:12px">
+          <div style="background:rgba(200,169,110,.1);border-radius:20px;height:4px;overflow:hidden">
+            <div class="prog-bar" style="background:var(--gold);height:100%;width:0%;transition:width .4s ease;border-radius:20px"></div>
+          </div>
+          <div style="font-size:11px;color:rgba(200,169,110,.5);margin-top:6px;text-align:center">ИИ создаёт твои слайды...</div>
+        </div>
+        <div class="gen-btn-wrap">
+          <button class="gen-go" id="btn-topic" onclick="generate('topic')">
+            ✦ Создать карусель бесплатно
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 2: по тексту -->
+      <div class="gen-panel" id="tab-text">
+        <div class="gen-row">
+          <div class="gfield full">
+            <label>Вставь свой текст</label>
+            <textarea id="tx-text" placeholder="Вставь статью, пост из блога или черновик. ИИ разложит ключевые мысли на 10 слайдов карусели..."></textarea>
+          </div>
+          <div class="gfield">
+            <label>Ниша</label>
+            <select id="tx-niche" onchange="handleNiche('tx-niche','tx-custom')">
+              <option value="Психология">Психология</option>
+              <option value="Бизнес и финансы">Бизнес и финансы</option>
+              <option value="Здоровье и фитнес">Здоровье и фитнес</option>
+              <option value="Образование">Образование</option>
+              <option value="Маркетинг">Маркетинг</option>
+              <option value="Личный бренд">Личный бренд</option>
+              <option value="Отношения">Отношения</option>
+              <option value="Саморазвитие">Саморазвитие</option>
+              <option value="custom">+ Своя ниша...</option>
+            </select>
+            <div class="niche-extra" id="tx-custom">
+              <input type="text" placeholder="Введи свою нишу" id="tx-custom-val" />
+            </div>
+          </div>
+          <div class="gfield">
+            <label>CTA — призыв к действию</label>
+            <input id="tx-cta" type="text" placeholder="Напиши СВЕТ в комментарии" />
+          </div>
+        </div>
+        <div class="gen-btn-wrap">
+          <button class="gen-go" id="btn-text" onclick="generate('text')">
+            ✦ Создать из текста — бесплатно
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 3: вручную -->
+      <div class="gen-panel" id="tab-manual">
+        <div class="gen-row">
+          <div class="gfield full">
+            <label>Тема и идея карусели</label>
+            <input id="m-topic" type="text" placeholder="Опиши подробно что хочешь рассказать" />
+          </div>
+
+          <div class="gfield">
+            <label>Количество слайдов</label>
+            <select id="m-count">
+              <option value="5">5 слайдов</option>
+              <option value="7">7 слайдов</option>
+              <option value="10" selected>10 слайдов</option>
+            </select>
+          </div>
+          <div class="gfield full">
+            <label>CTA — призыв к действию</label>
+            <input id="m-cta" type="text" placeholder="Сохрани пост · Подпишись · Напиши в директ" />
+          </div>
+        </div>
+        <div class="gen-btn-wrap">
+          <button class="gen-go" id="btn-manual" onclick="generate('manual')">
+            ✦ Создать карусель бесплатно
+          </button>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="results" id="results">
+        <div class="results-head">
+          <div class="results-label" id="results-label">Карусель готова</div>
+          <div class="results-acts">
+            <button class="ract" onclick="copyAll()">↗ Копировать текст</button>
+            <button class="ract" onclick="showToast('PNG экспорт — доступен на Pro плане')">↓ Скачать PNG</button>
+          </div>
+        </div>
+        <div class="rgrid" id="rgrid"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR WHO -->
+<section class="forwhom">
+  <div class="tag reveal">Для кого</div>
+  <h2 class="reveal">Твой инструмент<br>если ты <em>эксперт.</em></h2>
+  <div class="fw-grid reveal">
+    <div class="fwc"><div class="fwc-line"></div><div class="fwc-title">Эксперт</div><div class="fwc-desc">Психолог, юрист, коуч. Знания есть — времени на дизайн нет.</div></div>
+    <div class="fwc"><div class="fwc-line"></div><div class="fwc-title">Онлайн-школа</div><div class="fwc-desc">Стабильный контент без дизайнера в штате.</div></div>
+    <div class="fwc"><div class="fwc-line"></div><div class="fwc-title">Блогер</div><div class="fwc-desc">Публикуй чаще и выгляди профессионально.</div></div>
+    <div class="fwc"><div class="fwc-line"></div><div class="fwc-title">Продюсер</div><div class="fwc-desc">Ведёшь несколько проектов — делай контент быстро.</div></div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="tag reveal">Цены</div>
+  <h2 class="reveal">Один раз настроил —<br>контент <em>каждый день.</em></h2>
+  <div class="plans reveal">
+    <div class="plan">
+      <div class="plan-name">Старт</div>
+      <div><span class="plan-curr">₽</span><span class="plan-price">490</span></div>
+      <div class="plan-period">в месяц</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li>30 каруселей в месяц</li>
+        <li>10 слайдов за раз</li>
+        <li>Все три режима</li>
+        <li>Редактор текста</li>
+      </ul>
+      <button class="plan-btn plan-btn-outline">Выбрать</button>
+    </div>
+    <div class="plan featured">
+      <div class="plan-badge">ПОПУЛЯРНЫЙ</div>
+      <div class="plan-name">Pro</div>
+      <div><span class="plan-curr">₽</span><span class="plan-price">990</span></div>
+      <div class="plan-period">в месяц</div>
+      <div class="plan-free">3 дня бесплатно</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li>Безлимитные карусели</li>
+        <li>10 слайдов PNG 1080×1080</li>
+        <li>Все три режима</li>
+        <li>Редактор слайдов</li>
+        <li>Экспорт PNG</li>
+        <li>Любая ниша</li>
+      </ul>
+      <button class="plan-btn plan-btn-gold">Начать бесплатно</button>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Команда</div>
+      <div><span class="plan-curr">₽</span><span class="plan-price">2490</span></div>
+      <div class="plan-period">в месяц · до 5 аккаунтов</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li>Всё из Pro</li>
+        <li>5 рабочих аккаунтов</li>
+        <li>Приоритетная поддержка</li>
+        <li>Брендовые шаблоны</li>
+      </ul>
+      <button class="plan-btn plan-btn-outline">Выбрать</button>
+    </div>
+  </div>
+  <p class="price-context reveal">Фрилансер берёт 500–1500 ₽ за одну карусель.<br>На Pro плане — безлимит за 990 ₽ в месяц.</p>
+</section>
+
+<footer>
+  <div class="foot-logo">KARU<em>SEL</em></div>
+  <div class="foot-copy">© 2025 KARUSEL · Все права защищены</div>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modalOv" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="mprev" id="mprev">
+      <div class="mprev-num" id="mprev-num"></div>
+      <div class="mprev-title" id="mprev-title"></div>
+      <div class="mprev-bar" id="mprev-bar"></div>
+      <div class="mprev-text" id="mprev-text"></div>
+    </div>
+    <div class="mbody">
+      <label>Редактировать</label>
+      <textarea id="medit" oninput="syncEdit()"></textarea>
+      <div class="macts">
+        <button class="msave" onclick="saveEdit()">✓ Сохранить</button>
+        <button class="mclose" onclick="closeModalDirect()">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Анимация счётчика
+function animateCounter(el, target) {
+  var start = Math.floor(target * 0.85);
+  var current = start;
+  var step = Math.ceil((target - start) / 40);
+  var timer = setInterval(function(){
+    current = Math.min(current + step, target);
+    el.textContent = current.toLocaleString('ru');
+    if(current >= target) clearInterval(timer);
+  }, 50);
+}
+var counterEl = document.getElementById('counter');
+if(counterEl) {
+  var counterObs = new IntersectionObserver(function(e){
+    if(e[0].isIntersecting){ animateCounter(counterEl, 2847); counterObs.disconnect(); }
+  });
+  counterObs.observe(counterEl);
+}
+
+// Nav
+window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('scrolled',scrollY>40));
+
+// Reveal
+var obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('visible');obs.unobserve(x.target);}}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
+
+// Demo slides
+var demos=[
+  {num:'01',title:'Может быть, рай — это не место',text:'А состояние. Которое ты уже знаешь. Внутри.',photo:'1534318481852-28f8f9cc2372',g:'gd'},
+  {num:'02',title:'Самая большая трагедия человека',text:'Прожить жизнь ни разу не войдя в собственную глубину',photo:'1550684376-efba1b9f6b76',g:'gd2'},
+  {num:'03',title:'Шум мира громче голоса души',text:'Нас никогда не учили слушать тишину внутри',photo:'1448375240586-882707db888b',g:'gd'},
+  {num:'04',title:'Первый шаг — просто назови это',text:'Без оценки. Без борьбы. Просто — это есть.',photo:'1504701954957-2010ec3bcec1',g:'gd3'},
+  {num:'10',title:'Напиши: СВЕТ',text:'В комментарии — и я пришлю тебе послание. Лично.',photo:'1520209759809-a9bcb6cb3241',g:'gd'},
+];
+var dr=document.getElementById('demoRow');
+
+var demoSlideConfigs=[
+  {
+    // Слайд 1: огромный текст по центру, фото человек в грозе
+    photo:'forest1',
+    crop:'faces',
+    html:`<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 50%,rgba(0,0,0,.2) 100%)"></div>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:16px">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.25em;color:rgba(255,255,255,.4);margin-bottom:auto;padding-top:14px">01 &nbsp;&nbsp; KARUSEL</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 2px 20px rgba(0,0,0,1);margin-bottom:8px">Может быть,<br><em style="color:#c8a96e">рай —</em><br>не место</div>
+      <div style="width:24px;height:2px;background:#c8a96e;margin-bottom:8px"></div>
+      <div style="font-size:9px;color:rgba(255,255,255,.6);line-height:1.5">А состояние. Которое ты уже знаешь. Внутри.</div>
+    </div>`
+  },
+  {
+    // Слайд 2: текст сверху слева, тёмный портрет
+    photo:'portrait1',
+    crop:'faces,top',
+    html:`<div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.3) 55%,rgba(0,0,0,.7) 100%)"></div>
+    <div style="position:absolute;inset:0;padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:.25em;color:rgba(255,255,255,.4);margin-bottom:14px">02 &nbsp;&nbsp; KARUSEL</div>
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:#fff;line-height:1.15;text-shadow:0 2px 20px rgba(0,0,0,1)">Самая<br>большая<br><em style="color:#c8a96e">трагедия</em></div>
+      </div>
+      <div>
+        <div style="width:20px;height:2px;background:#c8a96e;margin-bottom:8px"></div>
+        <div style="font-size:8.5px;color:rgba(255,255,255,.6);line-height:1.55">Прожить жизнь ни разу не войдя в собственную глубину</div>
+      </div>
+    </div>`
+  },
+  {
+    // Слайд 3: текст по центру, лес туман
+    photo:'nature1',
+    crop:'center',
+    html:`<div style="position:absolute;inset:0;background:rgba(0,0,0,.55)"></div>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center">
+      <div style="font-size:9px;font-weight:800;letter-spacing:.25em;color:rgba(255,255,255,.4);margin-bottom:16px">03 &nbsp;&nbsp; KARUSEL</div>
+      <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:900;color:#fff;line-height:1.2;text-shadow:0 2px 20px rgba(0,0,0,1)">Шум мира<br>оказался громче<br><em style="color:#c8a96e">голоса души</em></div>
+      <div style="width:24px;height:2px;background:#c8a96e;margin:12px auto 10px"></div>
+      <div style="font-size:8.5px;color:rgba(255,255,255,.65);line-height:1.55;max-width:140px">Нас никогда не учили слушать тишину внутри</div>
+    </div>`
+  },
+  {
+    // Слайд 4: одно слово огромное, силуэт
+    photo:'sunset1',
+    crop:'center',
+    html:`<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(120,70,0,.95) 0%,rgba(0,0,0,.4) 60%,transparent 100%)"></div>
+    <div style="position:absolute;inset:0;padding:14px;display:flex;flex-direction:column;justify-content:flex-end">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.25em;color:rgba(255,255,255,.4);position:absolute;top:14px;left:14px">04 &nbsp;&nbsp; KARUSEL</div>
+      <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:#c8a96e;line-height:1;text-shadow:0 2px 20px rgba(0,0,0,1);letter-spacing:-.02em">ШАГ.</div>
+      <div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:700;color:#fff;line-height:1.2;text-shadow:0 2px 16px rgba(0,0,0,1);margin-bottom:8px">Первый и самый<br>сложный</div>
+      <div style="font-size:8.5px;color:rgba(255,255,255,.6);line-height:1.55">Назови то что чувствуешь. Без оценки. Просто — это есть.</div>
+    </div>`
+  },
+  {
+    // Слайд 10: CTA с рамкой по центру
+    photo:'city1',
+    crop:'faces',
+    html:`<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.97) 0%,rgba(0,0,0,.6) 40%,rgba(0,0,0,.3) 100%)"></div>
+    <div style="position:absolute;inset:0;padding:14px;display:flex;flex-direction:column;justify-content:space-between">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.25em;color:rgba(255,255,255,.4)">10 &nbsp;&nbsp; KARUSEL</div>
+      <div style="border:1px solid rgba(200,169,110,.5);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#c8a96e;margin-bottom:8px;font-weight:700">Напиши в комментарии</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#c8a96e;letter-spacing:.08em">СВЕТ</div>
+        <div style="width:20px;height:1px;background:#c8a96e;margin:8px auto"></div>
+        <div style="font-size:8px;color:rgba(255,255,255,.55);line-height:1.5">и я пришлю тебе послание. Лично.</div>
+      </div>
+    </div>`
+  },
+];
+
+demoSlideConfigs.forEach(s=>{
+  var d=document.createElement('div');d.className='ls';
+  d.innerHTML=`<img src="https://picsum.photos/seed/${s.photo}/500/500" alt="" loading="lazy">${s.html}`;
+  dr.appendChild(d);
+});
+
+// Tabs
+function switchTab(id,el){
+  document.querySelectorAll('.gen-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.gen-panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+}
+
+// Niche
+function handleNiche(selId,extraId){
+  var s=document.getElementById(selId);
+  var e=document.getElementById(extraId);
+  e.style.display=s.value==='custom'?'block':'none';
+  if(s.value==='custom') e.querySelector('input').focus();
+}
+function getNiche(selId,customId){
+  var s=document.getElementById(selId);
+  if(s.value==='custom'){var v=document.getElementById(customId).value.trim();return v||'Своя ниша';}
+  return s.value;
+}
+
+// Palette per slide
+var palettes=[
+  {bg:'#1a1208',tc:'#c8a96e',bc:'#c8a96e',bar:'#c8a96e'},
+  {bg:'#c8a96e',tc:'#0f0d0a',bc:'#0f0d0a',bar:'#0f0d0a'},
+  {bg:'#0f0d0a',tc:'#f0e8d8',bc:'#c8a96e',bar:'#c8a96e'},
+  {bg:'#c8a96e',tc:'#0f0d0a',bc:'#0f0d0a',bar:'#0f0d0a'},
+  {bg:'#1d1a15',tc:'#c8a96e',bc:'rgba(240,232,216,.6)',bar:'#c8a96e'},
+  {bg:'#1a1208',tc:'#f0e8d8',bc:'#c8a96e',bar:'#c8a96e'},
+  {bg:'#c8a96e',tc:'#0f0d0a',bc:'#0f0d0a',bar:'#0f0d0a'},
+  {bg:'#0f0d0a',tc:'#c8a96e',bc:'rgba(240,232,216,.6)',bar:'#c8a96e'},
+  {bg:'#1d1a15',tc:'#f0e8d8',bc:'#c8a96e',bar:'#c8a96e'},
+  {bg:'#c8a96e',tc:'#0f0d0a',bc:'#0f0d0a',bar:'#0f0d0a'},
+];
+
+var slides=[], curIdx=null, curNiche="default";
+
+async function generate(mode){
+  var btn,prompt;
+  if(mode==='topic'){
+    var topic=document.getElementById('t-topic').value.trim();
+    if(!topic){document.getElementById('t-topic').focus();showToast('Введи тему');return;}
+    var niche=getNiche('t-niche','t-custom-val'); curNiche=niche;
+    var ctx=document.getElementById('t-ctx').value.trim();
+    btn=document.getElementById('btn-topic');
+    prompt=`Создай вирусную карусель Instagram. Тема: "${topic}". Ниша: ${niche}.${ctx?' Контекст: '+ctx+'.':''}\n\nВерни ТОЛЬКО JSON массив из 10 объектов без markdown:\n[{"slide":1,"title":"КОРОТКИЙ МОЩНЫЙ ЗАГОЛОВОК","text":"1-2 предложения"}]\n\nСлайд 1: крючок-интрига. 2-9: ценный контент, каждый слайд — одна мысль. 10: сильный призыв к действию.\nЗаголовки короткие и мощные. Текст живой.`;
+  } else if(mode==='text'){
+    var txt=document.getElementById('tx-text').value.trim();
+    if(!txt){document.getElementById('tx-text').focus();showToast('Вставь текст');return;}
+    var niche2=getNiche('tx-niche','tx-custom-val');
+    var cta=document.getElementById('tx-cta').value.trim();
+    btn=document.getElementById('btn-text');
+    prompt=`Разложи этот текст на карусель Instagram (ниша: ${niche2}).\n\nТекст:\n${txt.slice(0,2000)}\n\n${cta?'CTA для последнего слайда: '+cta:''}\n\nВерни ТОЛЬКО JSON массив из 10 объектов без markdown:\n[{"slide":1,"title":"ЗАГОЛОВОК","text":"1-2 предложения"}]\n\nСохраняй смысл оригинала. Слайд 1 — крючок. Слайд 10 — призыв.`;
+  } else {
+    var mtopic=document.getElementById('m-topic').value.trim();
+    if(!mtopic){document.getElementById('m-topic').focus();showToast('Введи тему');return;}
+    var count=document.getElementById('m-count').value;
+    var mcta=document.getElementById('m-cta').value.trim();
+    btn=document.getElementById('btn-manual');
+    prompt=`Создай карусель Instagram. Тема: "${mtopic}". Тон: ${tone}. Количество слайдов: ${count}.${mcta?' CTA: '+mcta:''}\n\nВерни ТОЛЬКО JSON массив из ${count} объектов без markdown:\n[{"slide":1,"title":"ЗАГОЛОВОК","text":"текст"}]\n\nСлайд 1 — крючок. Последний — призыв.`;
+  }
+
+  btn.disabled=true;btn.classList.add('loading');
+  btn.innerHTML='<span class="spin">↻</span> Генерирую слайды...';
+  // показать прогресс
+  var prog = document.getElementById('genProgress');
+  if(prog){ prog.style.display='block'; prog.querySelector('.prog-bar').style.width='0%';
+    var pw=0; var pt=setInterval(function(){pw=Math.min(pw+2,85);prog.querySelector('.prog-bar').style.width=pw+'%';},400);
+  }
+  document.getElementById('results').style.display='none';
+
+  try{
+    var res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,
+        messages:[{role:"user",content:prompt}]})
+    });
+    var data=await res.json();
+    var raw=data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    slides=JSON.parse(raw);
+  }catch(e){slides=demoSlides();}
+
+  btn.disabled=false;btn.classList.remove('loading');
+  btn.innerHTML='✦ '+btn.textContent.replace('↻ Генерирую...','').trim()||'✦ Создать карусель бесплатно';
+  if(mode==='topic') btn.innerHTML='✦ Создать карусель бесплатно';
+  if(mode==='text') btn.innerHTML='✦ Создать из текста — бесплатно';
+  if(mode==='manual') btn.innerHTML='✦ Создать карусель бесплатно';
+
+  renderSlides(slides);
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'nearest'});
+  showToast('Готово — '+slides.length+' слайдов');
+}
+
+function renderSlides(arr){
+  var niche=curNiche||'default';
+  var g=document.getElementById('rgrid');
+  g.innerHTML='';
+
+  var seeds={'Психология':['1018','1025','1027','1043','1062','1070','1080','1090','1100','1110'],'Бизнес и финансы':['10','100','1002','1003','1004','1005','1006','1007','1008','1009'],'Здоровье и фитнес':['1059','1060','1061','1082','1083','1084','1085','1086','1087','1088'],'Образование':['20','21','22','23','24','25','26','27','28','29'],'Маркетинг':['1','2','3','4','5','6','7','8','9','11'],'Личный бренд':['1015','1016','1019','1020','1021','1022','1023','1024','1026','1028'],'Отношения':['1040','1041','1042','1044','1045','1046','1047','1048','1049','1050'],'Саморазвитие':['1051','1052','1053','1054','1055','1056','1057','1058','1063','1064'],'default':['1018','1025','10','1059','1','1015','1040','1051','20','1027']};
+  var grads=['linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.4) 50%,transparent 100%)','linear-gradient(160deg,rgba(0,0,0,.9) 0%,transparent 55%,rgba(0,0,0,.6) 100%)','linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.3) 60%,transparent 100%)','linear-gradient(to top,rgba(120,70,0,.9) 0%,rgba(0,0,0,.4) 55%,transparent 100%)','linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 40%,transparent 100%)','linear-gradient(150deg,rgba(0,0,0,.85) 0%,transparent 60%,rgba(0,0,0,.5) 100%)','linear-gradient(to top,rgba(0,0,0,.93) 0%,rgba(0,0,0,.35) 50%,transparent 100%)','linear-gradient(to top,rgba(80,40,0,.9) 0%,rgba(0,0,0,.4) 55%,transparent 100%)','linear-gradient(160deg,rgba(0,0,0,.88) 0%,transparent 50%,rgba(0,0,0,.65) 100%)','linear-gradient(to top,rgba(0,0,0,.96) 0%,rgba(0,0,0,.45) 45%,transparent 100%)'];
+  var accents=['#c8a96e','#fff','#c8a96e','#e8c98e','#c8a96e','#fff','#c8a96e','#e8c98e','#c8a96e','#fff'];
+  var photoArr=seeds[niche]||seeds['default'];
+
+  arr.forEach(function(s,i){
+    var seed=photoArr[i%photoArr.length];
+    var grad=grads[i%grads.length];
+    var accent=accents[i%accents.length];
+    var card=document.createElement('div');
+    card.className='slide-card';
+    card.id='slide-card-'+i;
+    card.innerHTML='<div class="slide-inner" id="slide-'+i+'" style="border-radius:14px;overflow:hidden;position:relative;aspect-ratio:1"><img src="https://picsum.photos/seed/'+seed+'/600/600" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s"><div style="position:absolute;inset:0;background:'+grad+';display:flex;flex-direction:column;justify-content:space-between;padding:14px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:10px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.4)">'+String(s.slide).padStart(2,'0')+'</span><span style="font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35)">KARUSEL</span></div><div><div style="width:22px;height:2px;background:'+accent+';margin-bottom:10px;border-radius:2px"></div><div style="font-family:Playfair Display,serif;font-size:14px;font-weight:900;line-height:1.2;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,1);margin-bottom:7px">'+s.title+'</div><div style="font-size:9px;color:rgba(255,255,255,.65);line-height:1.55;text-shadow:0 1px 8px rgba(0,0,0,1)">'+s.text+'</div></div></div></div><div class="slide-edit-bar"><span style="font-size:11px;color:var(--cm)">Слайд '+s.slide+'</span><button class="slide-edit-btn" onclick="openModal('+i+')">✎ Редактировать</button></div>';
+    var img=card.querySelector('img');
+    card.addEventListener('mouseenter',function(){img.style.transform='scale(1.08)';});
+    card.addEventListener('mouseleave',function(){img.style.transform='scale(1)';});
+    g.appendChild(card);
+  });
+}
+
+function openModal(i){
+  curIdx=i;var s=slides[i];var p=palettes[i%palettes.length];
+  document.getElementById('mprev').style.background=p.bg;
+  document.getElementById('mprev-num').style.color=p.tc;
+  document.getElementById('mprev-num').textContent='Слайд '+s.slide;
+  document.getElementById('mprev-title').style.color=p.tc;
+  document.getElementById('mprev-title').textContent=s.title;
+  document.getElementById('mprev-bar').style.background=p.bar;
+  document.getElementById('mprev-text').style.color=p.bc;
+  document.getElementById('mprev-text').textContent=s.text;
+  document.getElementById('medit').value=s.title+'\n\n'+s.text;
+  document.getElementById('modalOv').classList.add('on');
+}
+function closeModal(e){if(e.target===document.getElementById('modalOv'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modalOv').classList.remove('on');}
+function syncEdit(){
+  if(curIdx===null)return;
+  var l=document.getElementById('medit').value.split('\n\n');
+  document.getElementById('mprev-title').textContent=l[0]||'';
+  document.getElementById('mprev-text').textContent=l.slice(1).join('\n\n')||'';
+}
+function saveEdit(){
+  if(curIdx===null)return;
+  var l=document.getElementById('medit').value.split('\n\n');
+  slides[curIdx].title=l[0]||slides[curIdx].title;
+  slides[curIdx].text=l.slice(1).join(' ')||slides[curIdx].text;
+  renderSlides(slides);closeModalDirect();showToast('Сохранено');
+}
+function copyAll(){
+  var t=slides.map(s=>'— '+s.title+'\n'+s.text).join('\n\n');
+  navigator.clipboard.writeText(t).then(()=>showToast('Скопировано')).catch(()=>showToast('Ошибка'));
+}
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2300);
+}
+function demoSlides(){
+  return[
+    {slide:1,title:'Прочитай прежде чем закроешь',text:'То что ты давно чувствуешь — у этого есть объяснение'},
+    {slide:2,title:'Почему так происходит',text:'Наш мозг в стрессе реагирует одинаково у всех'},
+    {slide:3,title:'Что происходит в теле',text:'Кортизол растёт, мысли ускоряются, всё сужается'},
+    {slide:4,title:'Первый шаг',text:'Назови то что чувствуешь. Без оценки. Просто — это есть.'},
+    {slide:5,title:'Техника 5-4-3-2-1',text:'5 вижу, 4 слышу, 3 трогаю, 2 запах, 1 на вкус'},
+    {slide:6,title:'Прямо сейчас',text:'Три медленных выдоха длиннее вдоха. Серьёзно, работает.'},
+    {slide:7,title:'Чего не делать',text:'Говорить себе "успокойся" только усиливает тревогу'},
+    {slide:8,title:'Долгосрочно',text:'Сон, движение и меньше новостного потока'},
+    {slide:9,title:'Когда к специалисту',text:'Если мешает жить больше двух недель подряд'},
+    {slide:10,title:'Напиши: Свет',text:'В комментарии — и я пришлю тебе послание. Лично.'},
+  ];
+}
+</script>
+</body>
+</html>

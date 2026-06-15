@@ -804,19 +804,35 @@ function renderSlides(arr){
   var g=document.getElementById('rgrid');
   g.innerHTML='';
 
-  var seeds={'Психология':['1018','1025','1027','1043','1062','1070','1080','1090','1100','1110'],'Бизнес и финансы':['10','100','1002','1003','1004','1005','1006','1007','1008','1009'],'Здоровье и фитнес':['1059','1060','1061','1082','1083','1084','1085','1086','1087','1088'],'Образование':['20','21','22','23','24','25','26','27','28','29'],'Маркетинг':['1','2','3','4','5','6','7','8','9','11'],'Личный бренд':['1015','1016','1019','1020','1021','1022','1023','1024','1026','1028'],'Отношения':['1040','1041','1042','1044','1045','1046','1047','1048','1049','1050'],'Саморазвитие':['1051','1052','1053','1054','1055','1056','1057','1058','1063','1064'],'default':['1018','1025','10','1059','1','1015','1040','1051','20','1027']};
+  var nicheQuery={'Психология':'mind,calm,thoughtful','Бизнес и финансы':'business,finance,office','Здоровье и фитнес':'fitness,health,wellness','Образование':'education,learning,books','Маркетинг':'marketing,creative,digital','Личный бренд':'portrait,confidence,lifestyle','Отношения':'relationship,connection,people','Саморазвитие':'growth,nature,journey','default':'minimal,abstract,texture'};
   var grads=['linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.4) 50%,transparent 100%)','linear-gradient(160deg,rgba(0,0,0,.9) 0%,transparent 55%,rgba(0,0,0,.6) 100%)','linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.3) 60%,transparent 100%)','linear-gradient(to top,rgba(120,70,0,.9) 0%,rgba(0,0,0,.4) 55%,transparent 100%)','linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 40%,transparent 100%)','linear-gradient(150deg,rgba(0,0,0,.85) 0%,transparent 60%,rgba(0,0,0,.5) 100%)','linear-gradient(to top,rgba(0,0,0,.93) 0%,rgba(0,0,0,.35) 50%,transparent 100%)','linear-gradient(to top,rgba(80,40,0,.9) 0%,rgba(0,0,0,.4) 55%,transparent 100%)','linear-gradient(160deg,rgba(0,0,0,.88) 0%,transparent 50%,rgba(0,0,0,.65) 100%)','linear-gradient(to top,rgba(0,0,0,.96) 0%,rgba(0,0,0,.45) 45%,transparent 100%)'];
   var accents=['#c8a96e','#fff','#c8a96e','#e8c98e','#c8a96e','#fff','#c8a96e','#e8c98e','#c8a96e','#fff'];
-  var photoArr=seeds[niche]||seeds['default'];
+  var query=nicheQuery[niche]||nicheQuery['default'];
+  var sessionSeed=Date.now();
 
   arr.forEach(function(s,i){
-    var seed=photoArr[i%photoArr.length];
     var grad=grads[i%grads.length];
     var accent=accents[i%accents.length];
+    var layout=i%3;
     var card=document.createElement('div');
     card.className='slide-card';
     card.id='slide-card-'+i;
-    card.innerHTML='<div class="slide-inner" id="slide-'+i+'" style="border-radius:14px;overflow:hidden;position:relative;aspect-ratio:1"><img src="https://picsum.photos/seed/'+seed+'/600/600" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s"><div style="position:absolute;inset:0;background:'+grad+';display:flex;flex-direction:column;justify-content:space-between;padding:14px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:10px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.4)">'+String(s.slide).padStart(2,'0')+'</span><span style="font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35)">KARUSEL</span></div><div><div style="width:22px;height:2px;background:'+accent+';margin-bottom:10px;border-radius:2px"></div><div style="font-family:Playfair Display,serif;font-size:14px;font-weight:900;line-height:1.2;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,1);margin-bottom:7px">'+s.title+'</div><div style="font-size:9px;color:rgba(255,255,255,.65);line-height:1.55;text-shadow:0 1px 8px rgba(0,0,0,1)">'+s.text+'</div></div></div></div><div class="slide-edit-bar"><span style="font-size:11px;color:var(--cm)">Слайд '+s.slide+'</span><button class="slide-edit-btn" onclick="openModal('+i+')">✎ Редактировать</button></div>';
+    var imgUrl='https://source.unsplash.com/600x600/?'+encodeURIComponent(query)+'&sig='+(sessionSeed+i);
+    var imgTag='<img src="'+imgUrl+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s">';
+    var numTag='<span style="font-size:10px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.4)">'+String(s.slide).padStart(2,'0')+'</span>';
+    var logoTag='<span style="font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35)">KARUSEL</span>';
+    var titleTag='<div style="font-family:Playfair Display,serif;font-size:14px;font-weight:900;line-height:1.2;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,1);margin-bottom:7px">'+s.title+'</div>';
+    var textTag='<div style="font-size:9px;color:rgba(255,255,255,.65);line-height:1.55;text-shadow:0 1px 8px rgba(0,0,0,1)">'+s.text+'</div>';
+    var lineTag='<div style="width:22px;height:2px;background:'+accent+';margin-bottom:10px;border-radius:2px"></div>';
+    var overlay;
+    if(layout===0){
+      overlay='<div style="position:absolute;inset:0;background:'+grad+';display:flex;flex-direction:column;justify-content:space-between;padding:14px"><div style="display:flex;align-items:center;justify-content:space-between">'+numTag+logoTag+'</div><div>'+lineTag+titleTag+textTag+'</div></div>';
+    } else if(layout===1){
+      overlay='<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.92) 0%,rgba(0,0,0,.25) 45%,transparent 100%);display:flex;flex-direction:column;justify-content:flex-start;padding:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+numTag+logoTag+'</div>'+lineTag+titleTag+textTag+'</div>';
+    } else {
+      overlay='<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.35) 50%,rgba(0,0,0,.75) 100%);display:flex;flex-direction:column;justify-content:space-between;padding:14px"><div style="display:flex;align-items:center;justify-content:space-between">'+numTag+logoTag+'</div><div style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px;backdrop-filter:blur(2px)">'+lineTag+titleTag+textTag+'</div></div>';
+    }
+    card.innerHTML='<div class="slide-inner" id="slide-'+i+'" style="border-radius:14px;overflow:hidden;position:relative;aspect-ratio:1">'+imgTag+overlay+'</div><div class="slide-edit-bar"><span style="font-size:11px;color:var(--cm)">Слайд '+s.slide+'</span><button class="slide-edit-btn" onclick="openModal('+i+')">✎ Редактировать</button></div>';
     var img=card.querySelector('img');
     card.addEventListener('mouseenter',function(){img.style.transform='scale(1.08)';});
     card.addEventListener('mouseleave',function(){img.style.transform='scale(1)';});
